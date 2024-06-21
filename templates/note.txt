@@ -1,1 +1,1 @@
-HestiaCP Template
+HestiaCP Blesta nginX Template

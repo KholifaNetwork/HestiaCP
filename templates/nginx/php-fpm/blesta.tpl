@@ -46,7 +46,7 @@ server {
 
     # Error handling
     location /error/ {
-        alias %home%/%user%/web/%domain%/document_errors/;
+        alias %home%/%user%/web/%domain%/application/app/views/errors/;
     }
 
     # Stats

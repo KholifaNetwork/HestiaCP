@@ -2,77 +2,68 @@ server {
     listen      %ip%:%web_ssl_port% ssl;
     server_name %domain_idn% %alias_idn%;
     # Root location block (Update %docroot%/blesta to your own Directory / @blesta is Default)
-    root        %sdocroot%/blesta;
+    root        %sdocroot%/application;
     index       index.php index.html index.htm;
     access_log  /var/log/nginx/domains/%domain%.log combined;
     access_log  /var/log/nginx/domains/%domain%.bytes bytes;
     error_log   /var/log/nginx/domains/%domain%.error.log error;
 
-    ssl_certificate     %ssl_pem%;
-    ssl_certificate_key %ssl_key%;
-    ssl_stapling        on;
-    ssl_stapling_verify on;
 
-    # TLS 1.3 0-RTT anti-replay
-    if ($anti_replay = 307) { return 307 https://$host$request_uri; }
-    if ($anti_replay = 425) { return 425; }
+        # SSL cert/key pair
+        ssl_certificate     %ssl_pem%;
+        ssl_certificate_key %ssl_key%;
+        ssl_stapling        on;
+        ssl_stapling_verify on;
 
-    # Security: HSTS
-    include %home%/%user%/conf/web/%domain%/nginx.hsts.conf*;
+        # TLS 1.3 0-RTT anti-replay
+        if ($anti_replay = 307) { return 307 https://$host$request_uri; }
+        if ($anti_replay = 425) { return 425; }
 
-    # Security: Prevent access to hidden files
-    location ~ /\.(?!well-known\/) {
-        deny all;
-        return 404;
-    }
+        # Security: HSTS
+        include %home%/%user%/conf/web/%domain%/nginx.hsts.conf*;
 
-     # Main location block (Update @blesta to your own Directory / @blesta is Default)
-    location / {
-        try_files $uri @blesta;
-        rewrite ^(.*)/install\.php$ /$1/install/ redirect;
-    }
+        # iFrame protection
+        add_header X-Frame-Options SAMEORIGIN;
 
-    # PHP-FPM configuration for index.php
-    location = /index.php {
-        try_files $uri =404;
+        # Main location block
+        location / {
+                try_files $uri $uri/ /index.php?$query_string;
+                rewrite ^(.*)/install.php$ /$1/install/redirect;
+        }
 
-        include /etc/nginx/fastcgi_params;
-        fastcgi_index index.php;
-        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-        fastcgi_param HTTP_EARLY_DATA $rfc_early_data if_not_empty;
-        fastcgi_pass %backend_lsnr%;
-        include %home%/%user%/conf/web/%domain%/nginx.fastcgi_cache.conf*;
-    }
+        # PHP-FPM configuration for index.php
+        location = /index.php {
+                include /etc/nginx/fastcgi_params;
+                fastcgi_index index.php;
+                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                fastcgi_param HTTP_EARLY_DATA $rfc_early_data if_not_empty;
+                fastcgi_pass %backend_lsnr%;
+                include %home%/%user%/conf/web/%domain%/nginx.fastcgi_cache.conf*;
+        }
 
-    # Security: Block access to certain file types
-    location ~ /\. {
-        log_not_found off;
-        return 404;
-    }
+        # Security: Block access to certain file types
+        location ~ /\. {
+                log_not_found off;
+                return 404;
+        }
 
-    location ~* \.(php|pdt|txt)$ {
-        log_not_found off;
-        return 404;
-    }
+        location ~* \.(php|pdt|txt)$ {
+                log_not_found off;
+                return 404;
+        }
 
-    # Error handling
-    location /error/ {
-        alias %home%/%user%/web/%domain%/application/app/views/errors/;
-    }
+        location /error/ {
+                alias %home%/%user%/web/%domain%/document_errors/;
+        }
 
-    # Stats
-    location /vstats/ {
-        alias %home%/%user%/web/%domain%/stats/;
-        include %home%/%user%/web/%domain%/stats/auth.conf*;
-    }
+        location /vstats/ {
+                alias   %home%/%user%/web/%domain%/stats/;
+                include %home%/%user%/web/%domain%/stats/auth.conf*;
+        }
 
-    # Include additional configurations
-    include /etc/nginx/conf.d/phpmyadmin.inc*;
-    include /etc/nginx/conf.d/phppgadmin.inc*;
-    include %home%/%user%/conf/web/%domain%/nginx.ssl.conf_*;
-
-    # Core rewrite (Update @blesta to your own Directory / @blesta is Default)
-    location @blesta {
-        rewrite ^(.*)$ /index.php?$1 last;
-    }
+        # Include additional configurations
+        include /etc/nginx/conf.d/phpmyadmin.inc*;
+        include /etc/nginx/conf.d/phppgadmin.inc*;
+        include %home%/%user%/conf/web/%domain%/nginx.conf_*;
+		
 }

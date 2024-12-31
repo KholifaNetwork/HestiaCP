@@ -7,6 +7,7 @@ server {
         access_log  /var/log/nginx/domains/%domain%.bytes bytes;
         error_log   /var/log/nginx/domains/%domain%.error.log error;
 
+        # Include SSL forcing config (if applicable)
         include %home%/%user%/conf/web/%domain%/nginx.forcessl.conf*;
 
         # iFrame protection
@@ -32,15 +33,18 @@ server {
                 return 404;
         }
 
+        # Block access to specific file types
         location ~* \.(php|pdt|txt)$ {
                 log_not_found off;
                 return 404;
         }
 
+        # Handle custom error pages
         location /error/ {
                 alias %home%/%user%/web/%domain%/document_errors/;
         }
 
+        # Handle vstats (web stats) access
         location /vstats/ {
                 alias   %home%/%user%/web/%domain%/stats/;
                 include %home%/%user%/web/%domain%/stats/auth.conf*;

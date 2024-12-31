@@ -8,10 +8,10 @@ server {
     error_log   /var/log/nginx/domains/%domain%.error.log error;
 
     # SSL Configuration
-    ssl_certificate     %ssl_pem%;            # SSL certificate
-    ssl_certificate_key %ssl_key%;            # SSL private key
-    ssl_stapling        on;                   # Enable OCSP stapling
-    ssl_stapling_verify on;                   # Verify stapling responses
+    ssl_certificate     %ssl_pem%;
+    ssl_certificate_key %ssl_key%;
+    ssl_stapling        on;
+    ssl_stapling_verify on;
 
     # TLS 1.3 0-RTT anti-replay protection
     if ($anti_replay = 307) { return 307 https://$host$request_uri; }
@@ -22,25 +22,25 @@ server {
 
     # Main location block for application
     location / {
-        try_files $uri $uri/ /index.php?$args; # Attempt to serve static files or route to index.php
-        rewrite ^(.*)/install.php$ /$1/install/redirect; # Redirect for install.php
+        try_files $uri $uri/ /index.php?$args;
+        rewrite ^(.*)/install.php$ /$1/install/redirect;
 
         # Cache settings for static assets
         location ~* ^.+\.(jpeg|jpg|png|webp|gif|bmp|ico|svg|css|js)$ {
-            expires max;                          # Cache static files indefinitely
-            fastcgi_hide_header "Set-Cookie";     # Prevent cookies from being set for static files
+            expires max;
+            fastcgi_hide_header "Set-Cookie";
         }
 
         # PHP-FPM configuration
         location ~ [^/]\.php(/|$) {
-            try_files $uri =404;                  # Return 404 if PHP file is not found
+            try_files $uri =404;
 
-            include /etc/nginx/fastcgi_params;    # Include default FastCGI parameters
-            fastcgi_index index.php;              # Set default PHP entry point
-            fastcgi_param HTTP_EARLY_DATA $rfc_early_data if_not_empty; # Handle HTTP early data
-            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; # Set script path
-            fastcgi_pass %backend_lsnr%;          # Pass to backend listener
-            include %home%/%user%/conf/web/%domain%/nginx.fastcgi_cache.conf*; # Include cache settings
+            include /etc/nginx/fastcgi_params;
+            fastcgi_index index.php;
+            fastcgi_param HTTP_EARLY_DATA $rfc_early_data if_not_empty;
+            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+            fastcgi_pass %backend_lsnr%;
+            include %home%/%user%/conf/web/%domain%/nginx.fastcgi_cache.conf*;
         }
     }
 
@@ -58,20 +58,20 @@ server {
 
     # Error page location
     location /error/ {
-        alias %home%/%user%/web/%domain%/document_errors/; # Custom error pages
+        alias %home%/%user%/web/%domain%/document_errors/;
     }
 
     # vStats location
     location /vstats/ {
-        alias   %home%/%user%/web/%domain%/stats/;        # Web stats directory
-        include %home%/%user%/web/%domain%/stats/auth.conf*; # Authentication for stats
+        alias   %home%/%user%/web/%domain%/stats/;
+        include %home%/%user%/web/%domain%/stats/auth.conf*;
     }
 
     # Proxy-related adjustments
-    proxy_hide_header Upgrade; # Prevent passing "Upgrade" header to backend
+    proxy_hide_header Upgrade;
 
     # Include additional configurations
-    include /etc/nginx/conf.d/phpmyadmin.inc*; # Include phpMyAdmin configuration (if exists)
-    include /etc/nginx/conf.d/phppgadmin.inc*; # Include phpPgAdmin configuration (if exists)
-    include %home%/%user%/conf/web/%domain%/nginx.ssl.conf_*; # Include user-specific SSL configurations
+    include /etc/nginx/conf.d/phpmyadmin.inc*;
+    include /etc/nginx/conf.d/phppgadmin.inc*;
+    include %home%/%user%/conf/web/%domain%/nginx.ssl.conf_*;
 }

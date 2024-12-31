@@ -20,11 +20,11 @@ server {
 
         # PHP-FPM configuration for processing PHP files
         location = /index.php {
-                include /etc/nginx/fastcgi_params; # Load default FastCGI params
-                fastcgi_index index.php; # Default PHP entry point
-                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name; # Set PHP script path
-                fastcgi_pass %backend_lsnr%; # Pass to the backend PHP listener
-                include %home%/%user%/conf/web/%domain%/nginx.fastcgi_cache.conf*; # Include caching configuration
+                include /etc/nginx/fastcgi_params;
+                fastcgi_index index.php;
+                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                fastcgi_pass %backend_lsnr%;
+                include %home%/%user%/conf/web/%domain%/nginx.fastcgi_cache.conf*;
         }
 
         # Security: Block access to hidden files (e.g., .git, .env)
@@ -46,8 +46,8 @@ server {
 
         # Handle vstats (web stats) access
         location /vstats/ {
-                alias   %home%/%user%/web/%domain%/stats/; # Path to stats files
-                include %home%/%user%/web/%domain%/stats/auth.conf*; # Include auth configuration
+                alias   %home%/%user%/web/%domain%/stats/;
+                include %home%/%user%/web/%domain%/stats/auth.conf*;
         }
 
         # Include additional configurations

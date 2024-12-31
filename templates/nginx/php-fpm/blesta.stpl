@@ -1,77 +1,77 @@
 server {
     listen      %ip%:%web_ssl_port% ssl;
     server_name %domain_idn% %alias_idn%;
-    root        %sdocroot%/application; # Root directory for your application
+    # Root location block (Update %docroot%/blesta to your own Directory / @blesta is Default)
+    root        %sdocroot%/application;
     index       index.php index.html index.htm;
     access_log  /var/log/nginx/domains/%domain%.log combined;
     access_log  /var/log/nginx/domains/%domain%.bytes bytes;
     error_log   /var/log/nginx/domains/%domain%.error.log error;
 
-    # SSL Configuration
-    ssl_certificate     %ssl_pem%;
-    ssl_certificate_key %ssl_key%;
-    ssl_stapling        on;
-    ssl_stapling_verify on;
+        # SSL Configuration
+        ssl_certificate     %ssl_pem%;
+        ssl_certificate_key %ssl_key%;
+        ssl_stapling        on;
+        ssl_stapling_verify on;
 
-    # TLS 1.3 0-RTT anti-replay protection
-    if ($anti_replay = 307) { return 307 https://$host$request_uri; }
-    if ($anti_replay = 425) { return 425; }
-
-    # HTTP Strict Transport Security (HSTS)
-    include %home%/%user%/conf/web/%domain%/nginx.hsts.conf*;
-
-    # Main location block for application
-    location / {
-        try_files $uri $uri/ /index.php?$args;
-        rewrite ^(.*)/install.php$ /$1/install/redirect;
-
-        # Cache settings for static assets
-        location ~* ^.+\.(jpeg|jpg|png|webp|gif|bmp|ico|svg|css|js)$ {
-            expires max;
-            fastcgi_hide_header "Set-Cookie";
+        # ACME Challenge directory for SSL renewal
+        location ^~ /.well-known/acme-challenge/ {
+            root %sdocroot%;
+            allow all;
         }
 
-        # PHP-FPM configuration
-        location ~ [^/]\.php(/|$) {
-            try_files $uri =404;
+        # TLS 1.3 0-RTT anti-replay
+        if ($anti_replay = 307) { return 307 https://$host$request_uri; }
+        if ($anti_replay = 425) { return 425; }
 
-            include /etc/nginx/fastcgi_params;
-            fastcgi_index index.php;
-            fastcgi_param HTTP_EARLY_DATA $rfc_early_data if_not_empty;
-            fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
-            fastcgi_pass %backend_lsnr%;
-            include %home%/%user%/conf/web/%domain%/nginx.fastcgi_cache.conf*;
+        # Security: HSTS
+        include %home%/%user%/conf/web/%domain%/nginx.hsts.conf*;
+
+        # iFrame protection
+        add_header X-Frame-Options SAMEORIGIN;
+
+        # Main location block
+        location / {
+                try_files $uri $uri/ /index.php?$query_string;
+                rewrite ^(.*)/install.php$ /$1/install/redirect;
         }
-    }
 
-    # Block access to hidden files (e.g., .git, .env)
-    location ~ /\.(?!well-known\/) {
-        deny all;
-        return 404;
-    }
+        # PHP-FPM configuration for index.php
+        location = /index.php {
+                include /etc/nginx/fastcgi_params;
+                fastcgi_index index.php;
+                fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                fastcgi_param HTTP_EARLY_DATA $rfc_early_data if_not_empty;
+                fastcgi_pass %backend_lsnr%;
+                include %home%/%user%/conf/web/%domain%/nginx.fastcgi_cache.conf*;
+        }
 
-    # Block access to specific file types (e.g., PHP scripts, PDT, TXT files)
-    location ~* \.(php|pdt|txt)$ {
-        log_not_found off;
-        return 404;
-    }
+        # Security: Block access to certain file types
+        location ~ /\. {
+                log_not_found off;
+                return 404;
+        }
 
-    # Error page location
-    location /error/ {
-        alias %home%/%user%/web/%domain%/document_errors/;
-    }
+        # Block access to specific file types (e.g., PHP scripts, PDT, TXT files)
+        location ~* \.(php|pdt|txt)$ {
+                log_not_found off;
+                return 404;
+        }
 
-    # vStats location
-    location /vstats/ {
-        alias   %home%/%user%/web/%domain%/stats/;
-        include %home%/%user%/web/%domain%/stats/auth.conf*;
-    }
+        # Error page location
+        location /error/ {
+                alias %home%/%user%/web/%domain%/document_errors/;
+        }
 
-    # Proxy-related adjustments
-    proxy_hide_header Upgrade;
+        # vStats location
+        location /vstats/ {
+                alias   %home%/%user%/web/%domain%/stats/;
+                include %home%/%user%/web/%domain%/stats/auth.conf*;
+        }
 
-    # Include additional configurations
-    include /etc/nginx/conf.d/phpmyadmin.inc*;
-    include /etc/nginx/conf.d/phppgadmin.inc*;
-    include %home%/%user%/conf/web/%domain%/nginx.ssl.conf_*;
+        # Include additional configurations
+        include /etc/nginx/conf.d/phpmyadmin.inc*;
+        include /etc/nginx/conf.d/phppgadmin.inc*;
+        include %home%/%user%/conf/web/%domain%/nginx.conf_*;
+
 }

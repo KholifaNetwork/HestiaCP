@@ -14,11 +14,6 @@ server {
         ssl_stapling        on;
         ssl_stapling_verify on;
 
-        # ACME Challenge directory for SSL renewal
-        # location ^~ /.well-known/acme-challenge/ {
-        #    root %sdocroot%;
-        #    allow all;
-        #}
 
         # TLS 1.3 0-RTT anti-replay
         if ($anti_replay = 307) { return 307 https://$host$request_uri; }
@@ -26,6 +21,7 @@ server {
 
         # Security: HSTS
         include %home%/%user%/conf/web/%domain%/nginx.hsts.conf*;
+        include %home%/%user%/conf/web/%domain%/nginx.ssl.conf_*;
 
         # iFrame protection
         add_header X-Frame-Options SAMEORIGIN;
@@ -72,6 +68,4 @@ server {
         # Include additional configurations
         include /etc/nginx/conf.d/phpmyadmin.inc*;
         include /etc/nginx/conf.d/phppgadmin.inc*;
-        include %home%/%user%/conf/web/%domain%/nginx.ssl.conf_*;
-
 }

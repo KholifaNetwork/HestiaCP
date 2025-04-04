@@ -1,6 +1,7 @@
 server {
         listen  %ip%:%web_port%;
         server_name %domain_idn% %alias_idn%;
+        # Root location block (Update %docroot%/blesta to your own Directory / @blesta is Default)
         root        %docroot%/blesta;
         index       index.php index.html index.htm;
         access_log  /var/log/nginx/domains/%domain%.log combined;
@@ -9,7 +10,8 @@ server {
 
         # Include SSL forcing config (if applicable)
         include %home%/%user%/conf/web/%domain%/nginx.forcessl.conf*;
-
+        include %home%/%user%/conf/web/%domain%/nginx.conf_*;
+        
         # iFrame protection
         add_header X-Frame-Options SAMEORIGIN;
 
@@ -53,6 +55,4 @@ server {
         # Include additional configurations
         include /etc/nginx/conf.d/phpmyadmin.inc*;
         include /etc/nginx/conf.d/phppgadmin.inc*;
-        include %home%/%user%/conf/web/%domain%/nginx.conf_*;
-
 }

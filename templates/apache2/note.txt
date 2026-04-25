@@ -1,0 +1,1 @@
+Add Blesta Apache2 php-FPM Template blesta.tpl & blesta.stpl to - /usr/local/hestia/data/templates/web/apache2/php-fpm
